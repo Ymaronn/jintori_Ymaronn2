@@ -1,0 +1,33 @@
+name: jintori-members-monitor
+
+on:
+  schedule:
+    - cron: '3-58/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: jintori-monitor
+  cancel-in-progress: false
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch and record members
+        run: python3 monitor.py
+
+      - name: Commit changes
+        run: |
+          if [ -n "$(git status --porcelain data)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/jintori_members.json
+            git commit -m "members $(date -u +%Y-%m-%dT%H:%MZ)"
+            git push
+          fi
